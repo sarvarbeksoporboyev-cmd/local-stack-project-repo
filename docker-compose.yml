@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   localstack:
     image: localstack/localstack:3.8
@@ -59,3 +57,4 @@ services:
       - "8080:8080"
     depends_on:
       - localstack
+
