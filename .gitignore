@@ -1,0 +1,30 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+
+# Localstack and runtime artifacts
+.localstack/
+build/
+*.zip
+logs/
+
+# Data artifacts
+/data/monthly/*.csv
+/data/spark_output/*
+/tableau_exports/*.csv
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+*.egg-info/

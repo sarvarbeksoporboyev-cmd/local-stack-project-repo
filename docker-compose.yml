@@ -1,0 +1,61 @@
+version: "3.9"
+
+services:
+  localstack:
+    image: localstack/localstack:3.8
+    container_name: localstack
+    env_file:
+      - .env
+    environment:
+      SERVICES: s3,sns,sqs,lambda,dynamodb,iam,sts,logs
+      DEBUG: 1
+      AWS_DEFAULT_REGION: ${AWS_REGION}
+      LAMBDA_EXECUTOR: docker-reuse
+      DOCKER_HOST: unix:///var/run/docker.sock
+    ports:
+      - "4566:4566"
+    volumes:
+      - ./.localstack:/var/lib/localstack
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  airflow:
+    build:
+      context: .
+      dockerfile: airflow/Dockerfile
+    container_name: airflow
+    env_file:
+      - .env
+    environment:
+      AIRFLOW__CORE__EXECUTOR: SequentialExecutor
+      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+      AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "False"
+      AIRFLOW__WEBSERVER__EXPOSE_CONFIG: "True"
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: sqlite:////opt/airflow/airflow.db
+      PYTHONPATH: /opt/project/src
+      LOCALSTACK_ENDPOINT: ${LOCALSTACK_ENDPOINT_DOCKER}
+      LOCALSTACK_ENDPOINT_DOCKER: ${LOCALSTACK_ENDPOINT_DOCKER}
+    command: >
+      bash -c "
+      airflow db migrate &&
+      airflow users create
+      --username admin
+      --password admin
+      --firstname Local
+      --lastname User
+      --role Admin
+      --email admin@example.com || true &&
+      airflow scheduler &
+      airflow webserver"
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/plugins:/opt/airflow/plugins
+      - ./airflow/include:/opt/airflow/include
+      - ./data:/opt/project/data
+      - ./src:/opt/project/src
+      - ./scripts:/opt/project/scripts
+      - ./lambdas:/opt/project/lambdas
+      - ./.env:/opt/project/.env
+    ports:
+      - "8080:8080"
+    depends_on:
+      - localstack
